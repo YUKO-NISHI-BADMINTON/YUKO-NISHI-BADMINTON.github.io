@@ -1,0 +1,1294 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>春小バドミントン 試合練習組み合わせ</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Vue 3 CDN -->
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;700;900&display=swap');
+        body {
+            font-family: 'Zen Maru Gothic', sans-serif;
+            background-color: #f0fdf4;
+            background-image: radial-gradient(#dcfce7 1px, transparent 1px);
+            background-size: 24px 24px;
+        }
+        /* バドミントンコート本格デザイン */
+        .badminton-court {
+            background: linear-gradient(135deg, #0f6c38 0%, #15803d 50%, #0d5f30 100%);
+            border: 4px solid #ffffff;
+            position: relative;
+            box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.3);
+        }
+        .court-mat-grid {
+            background-size: 16px 16px;
+            background-image: 
+                linear-gradient(to right, rgba(255, 255, 255, 0.06) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(255, 255, 255, 0.06) 1px, transparent 1px);
+        }
+        .net-line {
+            border-top: 3px solid #facc15;
+            box-shadow: 0 0 8px rgba(250, 204, 21, 0.6);
+        }
+        @keyframes shuttlecock-bounce {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            50% { transform: translateY(-12px) rotate(15deg); }
+        }
+        .animate-shuttle-bounce {
+            animation: shuttlecock-bounce 2.5s ease-in-out infinite;
+        }
+        @keyframes racket-swing {
+            0% { transform: rotate(-15deg); }
+            50% { transform: rotate(30deg); }
+            100% { transform: rotate(-15deg); }
+        }
+        .animate-racket-swing {
+            animation: racket-swing 0.4s ease-in-out infinite;
+        }
+        /* Vue初期化前のチラつき（バグ画面）防止 */
+        [v-cloak] {
+            display: none !important;
+        }
+    </style>
+</head>
+<body class="text-slate-800 min-h-screen pb-12">
+    <div id="app" v-cloak class="max-w-4xl mx-auto px-4 py-6">
+        
+        <!-- ヘッダー -->
+        <header class="bg-gradient-to-r from-emerald-700 via-emerald-600 to-teal-700 text-white p-5 rounded-3xl shadow-xl mb-6 text-center relative overflow-hidden border-b-4 border-yellow-400">
+            <div class="absolute -left-6 -bottom-8 text-yellow-300/15 pointer-events-none select-none transform -rotate-45">
+                <svg class="w-48 h-48" viewBox="0 0 64 64" fill="currentColor">
+                    <ellipse cx="32" cy="18" rx="13" ry="16" fill="none" stroke="currentColor" stroke-width="3.5"/>
+                    <path d="M24 8v20 M28 4v28 M32 2v32 M36 4v28 M40 8v20 M20 12h24 M19 18h26 M20 24h24" stroke="currentColor" stroke-width="1.2" opacity="0.7"/>
+                    <line x1="32" y1="34" x2="32" y2="52" stroke="currentColor" stroke-width="3.5"/>
+                    <rect x="29.5" y="52" width="5" height="10" rx="1" fill="currentColor"/>
+                </svg>
+            </div>
+            <div class="absolute -right-4 -top-6 text-emerald-300/20 pointer-events-none select-none transform rotate-12">
+                <svg class="w-44 h-44" viewBox="0 0 64 64" fill="currentColor">
+                    <path d="M26 46 a6 6 0 0 0 12 0 z" fill="currentColor"/>
+                    <path d="M25 44 L14 12 L22 12 L28 38 Z M29 44 L27 8 L37 8 L35 44 Z M39 44 L50 12 L42 12 L36 38 Z" fill="currentColor" opacity="0.85"/>
+                    <line x1="20" y1="26" x2="44" y2="26" stroke="currentColor" stroke-width="2.5"/>
+                </svg>
+            </div>
+
+            <!-- サウンドON/OFF切替ボタン -->
+            <button @click="toggleSound" 
+                    :class="soundEnabled ? 'bg-yellow-400 text-emerald-950 shadow-yellow-500/30' : 'bg-slate-800/90 text-emerald-300 shadow-black/30'"
+                    class="fixed top-4 right-4 text-xs font-bold px-3.5 py-2 rounded-full shadow-xl backdrop-blur-md transition-all duration-200 flex items-center gap-2 z-50 border border-white/30 cursor-pointer active:scale-95 hover:scale-105">
+                <i :class="soundEnabled ? 'fa-solid fa-volume-high text-sm' : 'fa-solid fa-volume-xmark text-sm'"></i>
+                <span>{{ soundEnabled ? '効果音 ON' : '効果音 OFF' }}</span>
+            </button>
+
+            <div class="inline-flex items-center justify-center gap-3 mb-1 relative z-10">
+                <span class="text-3xl text-yellow-300 animate-shuttle-bounce inline-block">🏸</span>
+                <h1 class="text-2xl sm:text-3xl font-black tracking-wide">
+                    春小バド 練習お助けアプリ
+                </h1>
+                <span class="text-3xl text-yellow-300 animate-shuttle-bounce inline-block" style="animation-delay: 0.5s;">🏸</span>
+            </div>
+            <p class="text-xs sm:text-sm text-emerald-100 mt-1 font-bold flex items-center justify-center gap-2 relative z-10">
+                <span><i class="fa-solid fa-bullseye text-yellow-300"></i> ダブルス未ペア自動優先</span>
+                <span>•</span>
+                <span><i class="fa-solid fa-lock text-yellow-300"></i> 固定ペア完全対応</span>
+            </p>
+        </header>
+
+        <!-- ナビゲーションタブ -->
+        <nav class="flex bg-white rounded-2xl shadow-md p-1.5 mb-6 gap-1 border border-emerald-100">
+            <button @click="switchTab('members')" 
+                    :class="activeTab === 'members' ? 'bg-emerald-600 text-white shadow' : 'text-slate-600 hover:bg-emerald-50'"
+                    class="flex-1 py-3 px-2 rounded-xl font-bold text-xs sm:text-sm transition flex items-center justify-center gap-2">
+                <i class="fa-solid fa-users text-amber-300"></i>
+                ① メンバー登録
+            </button>
+            <button @click="switchTab('today')" 
+                    :class="activeTab === 'today' ? 'bg-emerald-600 text-white shadow' : 'text-slate-600 hover:bg-emerald-50'"
+                    class="flex-1 py-3 px-2 rounded-xl font-bold text-xs sm:text-sm transition flex items-center justify-center gap-2">
+                <i class="fa-solid fa-dice text-yellow-300"></i>
+                ② 参加・番号抽選
+            </button>
+            <button @click="switchTab('match')" 
+                    :class="activeTab === 'match' ? 'bg-emerald-600 text-white shadow' : 'text-slate-600 hover:bg-emerald-50'"
+                    class="flex-1 py-3 px-2 rounded-xl font-bold text-xs sm:text-sm transition flex items-center justify-center gap-2">
+                <i class="fa-solid fa-trophy text-amber-300"></i>
+                ③ ダブルス対戦表
+            </button>
+        </nav>
+
+        <!-- メインコンテンツ -->
+        <main>
+            <div v-if="activeTab === 'members'" class="space-y-6">
+                <!-- 登録フォーム -->
+                <div class="bg-white p-5 rounded-2xl shadow-md border border-emerald-100">
+                    <h2 class="text-lg font-bold text-emerald-800 mb-4 flex items-center gap-2">
+                        <i class="fa-solid fa-user-plus text-emerald-600"></i>
+                        新しいメンバーを登録する
+                    </h2>
+                    <form @submit.prevent="addMember" class="flex flex-col sm:flex-row gap-3">
+                        <input v-model="newMemberName" type="text" placeholder="名前（例：山田 太郎）" required
+                               class="flex-grow px-4 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                        <select v-model="newMemberType" class="px-4 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white font-medium">
+                            <option value="春小">春小メンバー</option>
+                            <option value="ビジター">ビジター</option>
+                        </select>
+                        <button type="submit" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-6 py-2.5 rounded-xl transition shadow">
+                            登録
+                        </button>
+                    </form>
+                </div>
+
+                <!-- 春小メンバー 一覧 -->
+                <div class="bg-white p-5 rounded-2xl shadow-md border border-emerald-100">
+                    <div class="flex justify-between items-center mb-3">
+                        <h3 class="font-bold text-slate-700 text-md flex items-center gap-2">
+                            <span class="bg-emerald-100 text-emerald-800 text-xs px-2.5 py-1 rounded-full font-black">①</span>
+                            春小メンバーリスト ({{ harukoMembers.length }}名)
+                        </h3>
+                    </div>
+                    <div v-if="harukoMembers.length === 0" class="text-slate-400 text-sm py-4 text-center">
+                        春小メンバーが登録されていません。「サンプルメンバーをセットする」を押すか、上部から登録してください。
+                    </div>
+                    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                        <div v-for="member in harukoMembers" :key="member.id" 
+                             class="flex items-center justify-between bg-emerald-50/60 border border-emerald-200/80 p-3 rounded-xl">
+                            <span class="font-bold text-slate-700 text-sm truncate">{{ member.name }}</span>
+                            <button @click="removeMember(member.id)" class="text-slate-400 hover:text-red-500 p-1 transition">
+                                <i class="fa-solid fa-trash-can text-xs"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ビジターメンバー 一覧 -->
+                <div class="bg-white p-5 rounded-2xl shadow-md border border-emerald-100">
+                    <div class="flex justify-between items-center mb-3">
+                        <h3 class="font-bold text-slate-700 text-md flex items-center gap-2">
+                            <span class="bg-amber-100 text-amber-800 text-xs px-2.5 py-1 rounded-full font-black">②</span>
+                            ビジターメンバーリスト ({{ visitorMembers.length }}名)
+                        </h3>
+                    </div>
+                    <div v-if="visitorMembers.length === 0" class="text-slate-400 text-sm py-4 text-center">
+                        ビジターメンバーが登録されていません。
+                    </div>
+                    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                        <div v-for="member in visitorMembers" :key="member.id" 
+                             class="flex items-center justify-between bg-amber-50/60 border border-amber-200/80 p-3 rounded-xl">
+                            <span class="font-bold text-slate-700 text-sm truncate">{{ member.name }}</span>
+                            <button @click="removeMember(member.id)" class="text-slate-400 hover:text-red-500 p-1 transition">
+                                <i class="fa-solid fa-trash-can text-xs"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- プリセット読み込みボタン -->
+                <div class="text-center pt-2">
+                    <button @click="loadSampleData" class="bg-emerald-100 hover:bg-emerald-200 text-emerald-800 font-bold px-4 py-2 rounded-xl text-xs transition shadow-sm">
+                        <i class="fa-solid fa-rotate-left mr-1.5"></i>サンプルメンバーをセットする
+                    </button>
+                </div>
+            </div>
+
+            <div v-if="activeTab === 'today'" class="space-y-6">
+                <div class="bg-white p-5 rounded-2xl shadow-md border border-emerald-100">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 pb-4 border-b border-slate-100">
+                        <div>
+                            <h2 class="text-lg font-bold text-emerald-800 flex items-center gap-2">
+                                <i class="fa-solid fa-check-double text-emerald-600"></i>
+                                ③ 本日の参加選択（全 {{ members.length }} 名中 {{ selectedMemberIds.length }} 名選択）
+                            </h2>
+                            <p class="text-xs text-slate-500 mt-0.5">本日練習に参加する人にチェックを入れてください。</p>
+                        </div>
+                        <div class="flex gap-2">
+                            <button @click="selectAllMembers" class="px-3 py-1.5 text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-lg transition">
+                                全員チェック
+                            </button>
+                            <button @click="deselectAllMembers" class="px-3 py-1.5 text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-lg transition">
+                                解除
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 参加者チェックエリア -->
+                    <div class="space-y-4">
+                        <!-- 春小グループ -->
+                        <div>
+                            <span class="text-xs font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-md mb-2 inline-block">春小メンバー</span>
+                            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+                                <label v-for="member in harukoMembers" :key="member.id" 
+                                       :class="selectedMemberIds.includes(member.id) ? 'bg-emerald-100/70 border-emerald-400 text-emerald-900 font-bold' : 'bg-slate-50 border-slate-200 text-slate-600'"
+                                       class="flex items-center gap-2.5 p-2.5 rounded-xl border cursor-pointer select-none transition">
+                                    <input type="checkbox" :value="member.id" v-model="selectedMemberIds" class="w-4 h-4 accent-emerald-600 rounded">
+                                    <span class="text-sm truncate">{{ member.name }}</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- ビジターグループ -->
+                        <div v-if="visitorMembers.length > 0">
+                            <span class="text-xs font-bold text-amber-700 bg-amber-50 px-2.5 py-1 rounded-md mb-2 inline-block">ビジター</span>
+                            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+                                <label v-for="member in visitorMembers" :key="member.id" 
+                                       :class="selectedMemberIds.includes(member.id) ? 'bg-amber-100/70 border-amber-400 text-amber-900 font-bold' : 'bg-slate-50 border-slate-200 text-slate-600'"
+                                       class="flex items-center gap-2.5 p-2.5 rounded-xl border cursor-pointer select-none transition">
+                                    <input type="checkbox" :value="member.id" v-model="selectedMemberIds" class="w-4 h-4 accent-amber-600 rounded">
+                                    <span class="text-sm truncate">{{ member.name }}</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 個別番号抽選アクション -->
+                <div class="bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 p-6 rounded-3xl shadow-lg text-white border-2 border-yellow-300 relative overflow-hidden">
+                    <div class="text-center mb-5 relative z-10">
+                        <h3 class="text-lg font-bold mb-1">
+                            ④ 個人別の番号抽選 (参加: <span class="text-yellow-300 text-2xl font-black">{{ todayParticipants.length }}</span> 名 / 残り <span class="text-yellow-300 text-2xl font-black">{{ remainingNumbers.length }}</span> つ)
+                        </h3>
+                        <p class="text-xs text-emerald-100">名前を選択して「抽選する！」を押すと今日の番号が決定！</p>
+                    </div>
+
+                    <div class="max-w-md mx-auto bg-white/15 p-4 rounded-2xl backdrop-blur-md border border-white/30 flex flex-col sm:flex-row items-center gap-3 relative z-10 shadow-inner">
+                        <select v-model="selectedIndividualMemberId" 
+                                class="w-full sm:w-auto flex-1 px-4 py-3 rounded-xl border border-white/30 text-slate-800 font-bold focus:outline-none focus:ring-2 focus:ring-yellow-300 bg-white">
+                            <option value="">-- 名前を選択してください --</option>
+                            <option v-for="member in unassignedTodayParticipants" :key="member.id" :value="member.id">
+                                {{ member.name }} ({{ member.type }})
+                            </option>
+                        </select>
+                        <button @click="drawIndividualNumber" 
+                                :disabled="!selectedIndividualMemberId || remainingNumbers.length === 0"
+                                class="w-full sm:w-auto bg-yellow-400 hover:bg-yellow-300 text-emerald-950 font-black px-6 py-3 rounded-xl shadow-md transition transform active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed whitespace-nowrap flex items-center justify-center gap-2">
+                            <span>🏸 抽選する！</span>
+                        </button>
+                    </div>
+
+                    <!-- まとめ操作 -->
+                    <div class="flex justify-center gap-4 mt-5 pt-3 border-t border-emerald-500/50 text-xs relative z-10">
+                        <button @click="drawRandomNumbers" :disabled="todayParticipants.length === 0" class="text-emerald-100 hover:text-white underline flex items-center gap-1">
+                            <i class="fa-solid fa-shuffle"></i> 全員一括でランダム抽選する
+                        </button>
+                        <button @click="resetAssignedNumbers" :disabled="assignedParticipants.length === 0" class="text-emerald-100 hover:text-rose-200 underline flex items-center gap-1">
+                            <i class="fa-solid fa-arrow-rotate-left"></i> 抽選結果をクリア
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 抽選モーダル -->
+                <div v-if="showDrawModal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+                    <div class="bg-white rounded-3xl p-6 sm:p-8 max-w-sm w-full text-center shadow-2xl transform transition-all border-4 border-yellow-400 relative overflow-hidden">
+                        <div class="text-emerald-700 text-lg font-black mb-1 flex items-center justify-center gap-2">
+                            <span>🏸</span>
+                            <span>{{ drawingMemberName }} さんの番号</span>
+                            <span>🏸</span>
+                        </div>
+                        
+                        <div class="w-32 h-32 my-4 mx-auto rounded-full bg-gradient-to-tr from-emerald-700 via-emerald-600 to-teal-500 border-4 border-yellow-300 text-white flex flex-col items-center justify-center shadow-xl relative">
+                            <span v-if="isSpinning" class="text-3xl animate-racket-swing absolute top-2 right-2">🏸</span>
+                            <span class="text-6xl font-black tracking-wider" :class="{ 'animate-pulse': isSpinning }">
+                                {{ currentDisplayNumber }}
+                            </span>
+                        </div>
+
+                        <p v-if="isSpinning" class="text-xs text-emerald-800 font-bold animate-bounce flex items-center justify-center gap-1">
+                            <span>抽選中...</span>
+                        </p>
+                        <p v-else class="text-emerald-800 font-black text-base mb-4 flex items-center justify-center gap-1">
+                            🎉 番号決定！対戦で頑張りましょう！
+                        </p>
+
+                        <button v-if="!isSpinning" @click="closeDrawModal" 
+                                class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl shadow-lg transition">
+                            OK
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 抽選済み番号一覧 -->
+                <div v-if="assignedParticipants.length > 0" class="bg-white p-5 rounded-2xl shadow-md border border-emerald-100">
+                    <h3 class="font-bold text-slate-700 text-md mb-3 flex items-center justify-between">
+                        <span><i class="fa-solid fa-list-ol text-emerald-600 mr-2"></i>割り振られた番号一覧 ({{ assignedParticipants.length }}/{{ todayParticipants.length }})</span>
+                        <span class="text-xs font-normal text-slate-400">※ダブルス対戦はこの番号を使用します</span>
+                    </h3>
+                    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                        <div v-for="item in assignedParticipants" :key="item.id"
+                             class="flex items-center gap-3 bg-slate-50 border border-slate-200 p-3 rounded-xl relative group">
+                            <span class="w-8 h-8 rounded-full bg-emerald-600 text-white font-black text-sm flex items-center justify-center shrink-0 shadow">
+                                {{ item.number }}
+                            </span>
+                            <div class="overflow-hidden flex-grow">
+                                <p class="font-bold text-slate-800 text-sm truncate">{{ item.name }}</p>
+                                <p class="text-[10px]" :class="item.type === '春小' ? 'text-emerald-600 font-bold' : 'text-amber-600 font-bold'">{{ item.type }}</p>
+                            </div>
+                            <button @click="cancelIndividualNumber(item.id)" title="この人の抽選を取り消す" 
+                                    class="text-slate-300 hover:text-red-500 text-xs p-1 opacity-60 group-hover:opacity-100 transition">
+                                <i class="fa-solid fa-xmark"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div v-if="activeTab === 'match'" class="space-y-6">
+                <!-- 条件設定バー -->
+                <div class="bg-white p-5 rounded-2xl shadow-md border border-emerald-100 flex flex-col md:flex-row items-center justify-between gap-4">
+                    <div class="flex items-center gap-4 w-full md:w-auto">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 mb-1">使用コート数</label>
+                            <select v-model.number="courtCount" class="px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl font-bold text-slate-700">
+                                <option :value="1">1コート（4人）</option>
+                                <option :value="2">2コート（8人）</option>
+                                <option :value="3">3コート（12人）</option>
+                                <option :value="4">4コート（16人）</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="flex gap-2 w-full md:w-auto">
+                        <button @click="generateMatches" 
+                                :disabled="assignedParticipants.length < 4 || courts.length > 0"
+                                :class="courts.length > 0 ? 'bg-slate-200 text-slate-400 cursor-not-allowed border border-slate-300' : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow'"
+                                class="flex-1 md:flex-none font-bold px-5 py-2.5 rounded-xl transition text-sm flex items-center justify-center gap-1.5">
+                            <span>🏸 ⑤ 試合を組む</span>
+                        </button>
+                        <button @click="nextRotation" 
+                                :disabled="courts.length === 0"
+                                :class="courts.length === 0 ? 'bg-slate-200 text-slate-400 cursor-not-allowed border border-slate-300' : 'bg-indigo-600 hover:bg-indigo-700 text-white shadow'"
+                                class="flex-1 md:flex-none font-bold px-5 py-2.5 rounded-xl transition text-sm flex items-center justify-center gap-1.5">
+                            <i class="fa-solid fa-forward-step"></i>
+                            <span>次ゲームへ</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- ペア固定＆履歴管理パネル -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <!-- ① ペア固定設定 -->
+                    <div class="bg-white p-4 rounded-2xl shadow-sm border border-emerald-100">
+                        <h3 class="text-sm font-bold text-slate-700 mb-2 flex items-center justify-between">
+                            <span><i class="fa-solid fa-lock text-amber-500 mr-1.5"></i>固定ペアの設定</span>
+                            <span class="text-[11px] text-slate-400 font-normal">※この2人は必ずペアになります</span>
+                        </h3>
+                        <div class="flex flex-col sm:flex-row gap-2 mb-3">
+                            <select v-model="fixedMember1Id" class="flex-1 px-3 py-1.5 rounded-lg border border-slate-300 text-xs font-bold text-slate-700 bg-white">
+                                <option value="">-- 1人目 --</option>
+                                <option v-for="m in members" :key="m.id" :value="m.id" :disabled="m.id === fixedMember2Id">
+                                    {{ m.name }} ({{ m.type }})
+                                </option>
+                            </select>
+                            <select v-model="fixedMember2Id" class="flex-1 px-3 py-1.5 rounded-lg border border-slate-300 text-xs font-bold text-slate-700 bg-white">
+                                <option value="">-- 2人目 --</option>
+                                <option v-for="m in members" :key="m.id" :value="m.id" :disabled="m.id === fixedMember1Id">
+                                    {{ m.name }} ({{ m.type }})
+                                </option>
+                            </select>
+                            <button @click="addFixedPair" :disabled="!fixedMember1Id || !fixedMember2Id"
+                                    class="bg-amber-500 hover:bg-amber-600 text-white font-bold px-3 py-1.5 rounded-lg text-xs transition disabled:opacity-40">
+                                固定追加
+                            </button>
+                        </div>
+
+                        <!-- 固定ペア一覧 -->
+                        <div v-if="fixedPairs.length > 0" class="flex flex-wrap gap-2">
+                            <div v-for="pair in fixedPairs" :key="pair.id" 
+                                 class="flex items-center gap-2 bg-amber-50 border border-amber-200 text-amber-900 px-2.5 py-1 rounded-lg text-xs font-bold">
+                                <span><i class="fa-solid fa-link text-amber-600 mr-1"></i>{{ pair.p1Name }} & {{ pair.p2Name }}</span>
+                                <button @click="removeFixedPair(pair.id)" class="text-amber-400 hover:text-red-500">
+                                    <i class="fa-solid fa-xmark"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <p v-else class="text-[11px] text-slate-400">登録された固定ペアはありません。</p>
+                    </div>
+
+                    <!-- ② 対戦履歴情報 -->
+                    <div class="bg-white p-4 rounded-2xl shadow-sm border border-emerald-100 flex flex-col justify-between">
+                        <div>
+                            <h3 class="text-sm font-bold text-slate-700 mb-2 flex items-center justify-between">
+                                <span><i class="fa-solid fa-clock-rotate-left text-emerald-600 mr-1.5"></i>対戦・ペア履歴状況</span>
+                                <span class="bg-emerald-100 text-emerald-800 font-black text-xs px-2 py-0.5 rounded-full">通算 {{ currentGameRound }} ゲーム完了</span>
+                            </h3>
+                            <p class="text-xs text-slate-500">
+                                過去に組んだペアを記録し、常に新しいペアになるよう自動最適化します。重複発生時は <span class="text-rose-500 font-bold">⚠️ 既ペア</span> マークでお知らせします。
+                            </p>
+                        </div>
+                        <div class="pt-3 border-t border-slate-100 flex justify-end">
+                            <button @click="resetMatchHistory" :disabled="matchHistory.length === 0"
+                                    class="text-xs text-slate-500 hover:text-red-600 underline flex items-center gap-1 disabled:opacity-30">
+                                <i class="fa-solid fa-trash-arrow-up"></i> ペア履歴をクリアする
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div v-if="assignedParticipants.length < 4" class="bg-amber-50 border border-amber-200 text-amber-800 p-4 rounded-xl text-center text-sm font-bold">
+                    <i class="fa-solid fa-triangle-exclamation mr-1.5"></i>ダブルスの試合を組むには最低4名の番号割り振りが作られている必要があります。「② 参加・番号抽選」タブで抽選を行ってください。
+                </div>
+
+                <!-- コート表示エリア -->
+                <div v-if="courts.length > 0" class="space-y-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div v-for="(court, cIdx) in courts" :key="cIdx" class="bg-white p-5 rounded-3xl shadow-lg border border-emerald-100 flex flex-col justify-between">
+                            <div>
+                                <div class="flex justify-between items-center mb-3">
+                                    <span class="bg-emerald-800 text-yellow-300 font-black text-xs px-3.5 py-1 rounded-full shadow border border-emerald-600 flex items-center gap-1.5">
+                                        <span>🏸 第 {{ court.id }} コート</span>
+                                    </span>
+                                </div>
+
+                                <!-- 本格バドミントンコートグラフィック -->
+                                <div class="badminton-court court-mat-grid rounded-2xl p-3 text-white shadow-xl mb-4 relative overflow-hidden">
+                                    <div class="absolute inset-y-0 left-0 w-1 bg-yellow-400 z-10"></div>
+                                    <div class="absolute inset-y-0 right-0 w-1 bg-yellow-400 z-10"></div>
+
+                                    <!-- ペア A -->
+                                    <div class="bg-emerald-950/60 p-2.5 rounded-xl border border-emerald-400/40 mb-2 relative backdrop-blur-sm">
+                                        <div class="flex justify-between items-center mb-1.5">
+                                            <span class="text-[10px] text-yellow-300 font-black tracking-wide">TEAM A (手前)</span>
+                                            <span v-if="isFixedPair(court.teamA[0], court.teamA[1])" 
+                                                  class="bg-amber-400 text-amber-950 font-black text-[10px] px-2 py-0.5 rounded-md flex items-center gap-1 shadow">
+                                                <i class="fa-solid fa-lock text-[9px]"></i> 固定ペア
+                                            </span>
+                                            <span v-else-if="getPairTimes(court.teamA[0], court.teamA[1]) >= 2" 
+                                                  class="bg-rose-500 text-white font-black text-[10px] px-2 py-0.5 rounded-md flex items-center gap-1 shadow animate-pulse">
+                                                <i class="fa-solid fa-triangle-exclamation"></i> 既ペア ({{ getPairTimes(court.teamA[0], court.teamA[1]) }}回目)
+                                            </span>
+                                        </div>
+                                        <div class="grid grid-cols-2 gap-2">
+                                            <div v-for="player in court.teamA" :key="player.number" class="bg-emerald-800/90 p-2 rounded-lg flex items-center justify-between border border-emerald-300/40">
+                                                <div class="flex items-center gap-1.5 overflow-hidden">
+                                                    <span class="w-6 h-6 rounded-full bg-yellow-400 text-emerald-950 font-black text-xs flex items-center justify-center shrink-0 shadow">
+                                                        {{ player.number }}
+                                                    </span>
+                                                    <span class="font-bold text-xs truncate">{{ player.name }}</span>
+                                                </div>
+                                                <button @click="skipPlayer(player.number)" 
+                                                        title="この番号を飛ばして新しい番号を入れる"
+                                                        class="text-emerald-200 hover:text-yellow-300 hover:bg-emerald-700/60 p-1 rounded transition text-xs">
+                                                    <i class="fa-solid fa-user-slash"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- ネット -->
+                                    <div class="net-line my-3 relative flex items-center justify-center">
+                                        <span class="bg-yellow-400 text-emerald-950 font-black text-[10px] px-3 py-0.5 rounded-full uppercase tracking-wider shadow">
+                                            NET / VS
+                                        </span>
+                                    </div>
+
+                                    <!-- ペア B -->
+                                    <div class="bg-emerald-950/60 p-2.5 rounded-xl border border-emerald-400/40 relative backdrop-blur-sm">
+                                        <div class="flex justify-between items-center mb-1.5">
+                                            <span class="text-[10px] text-yellow-300 font-black tracking-wide">TEAM B (奥)</span>
+                                            <span v-if="isFixedPair(court.teamB[0], court.teamB[1])" 
+                                                  class="bg-amber-400 text-amber-950 font-black text-[10px] px-2 py-0.5 rounded-md flex items-center gap-1 shadow">
+                                                <i class="fa-solid fa-lock text-[9px]"></i> 固定ペア
+                                            </span>
+                                            <span v-else-if="getPairTimes(court.teamB[0], court.teamB[1]) >= 2" 
+                                                  class="bg-rose-500 text-white font-black text-[10px] px-2 py-0.5 rounded-md flex items-center gap-1 shadow animate-pulse">
+                                                <i class="fa-solid fa-triangle-exclamation"></i> 既ペア ({{ getPairTimes(court.teamB[0], court.teamB[1]) }}回目)
+                                            </span>
+                                        </div>
+                                        <div class="grid grid-cols-2 gap-2">
+                                            <div v-for="player in court.teamB" :key="player.number" class="bg-emerald-800/90 p-2 rounded-lg flex items-center justify-between border border-emerald-300/40">
+                                                <div class="flex items-center gap-1.5 overflow-hidden">
+                                                    <span class="w-6 h-6 rounded-full bg-yellow-400 text-emerald-950 font-black text-xs flex items-center justify-center shrink-0 shadow">
+                                                        {{ player.number }}
+                                                    </span>
+                                                    <span class="font-bold text-xs truncate">{{ player.name }}</span>
+                                                </div>
+                                                <button @click="skipPlayer(player.number)" 
+                                                        title="この番号を飛ばして新しい番号を入れる"
+                                                        class="text-emerald-200 hover:text-yellow-300 hover:bg-emerald-700/60 p-1 rounded transition text-xs">
+                                                    <i class="fa-solid fa-user-slash"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <p class="text-[11px] text-slate-400 text-center">
+                                ※人名の横の <i class="fa-solid fa-user-slash text-slate-500"></i> を押すと、待機メンバーが入ります。
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- 待機メンバー一覧 -->
+                    <div class="bg-white p-5 rounded-2xl shadow-md border border-emerald-100">
+                        <h3 class="font-bold text-slate-700 text-md mb-3 flex items-center gap-2">
+                            <i class="fa-solid fa-chair text-indigo-500"></i>
+                            お休み・待機中のメンバー ({{ waitingList.length }}名)
+                        </h3>
+                        <div v-if="waitingList.length === 0" class="text-slate-400 text-xs py-2">
+                            現在お休みのメンバーはいません（全員試合中）。
+                        </div>
+                        <div class="flex flex-wrap gap-2">
+                            <div v-for="item in waitingList" :key="item.number" 
+                                 @click="selectWaitingMember(item.number)"
+                                 :class="selectedWaitingMemberNumber === item.number ? 'bg-indigo-100 border-indigo-500 text-indigo-900 ring-2 ring-indigo-400' : 'bg-slate-100 border-slate-200 text-slate-700 hover:bg-slate-200'"
+                                 class="flex items-center gap-2 border px-3 py-1.5 rounded-lg cursor-pointer transition select-none">
+                                <span class="w-5 h-5 rounded-full text-white font-bold text-xs flex items-center justify-center shrink-0"
+                                      :class="selectedWaitingMemberNumber === item.number ? 'bg-indigo-600' : 'bg-slate-500'">
+                                    {{ item.number }}
+                                </span>
+                                <span class="text-xs font-bold">{{ item.name }}</span>
+                                <span v-if="selectedWaitingMemberNumber === item.number" class="text-[10px] bg-indigo-600 text-white px-1.5 py-0.5 rounded font-black ml-1">選択中</span>
+                            </div>
+                        </div>
+                        <p v-if="waitingList.length > 0" class="text-[11px] text-indigo-600 mt-2 font-bold flex items-center gap-1">
+                            <i class="fa-solid fa-lightbulb"></i>
+                            <span>名前をタップして「選択中」にしてからコートの交代ボタンを押すと、その人を指名してコートに入れることができます。</span>
+                        </p>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getDatabase, ref as dbRef, set, remove, onValue } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-database.js";
+
+        // Firebase 設定
+        const firebaseConfig = {
+          apiKey: "AIzaSyCuiqgobH8WWXS0T8i5gmsvEKKjjP6BRn0",
+          authDomain: "harusho-badminton-d9275.firebaseapp.com",
+          databaseURL: "https://harusho-badminton-d9275-default-rtdb.firebaseio.com",
+          projectId: "harusho-badminton-d9275",
+          storageBucket: "harusho-badminton-d9275.firebasestorage.app",
+          messagingSenderId: "374615745563",
+          appId: "1:374615745563:web:c30988211607f4638844be"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getDatabase(app);
+
+        let isAuthReady = false;
+        const initAuth = async () => {
+            try {
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+            } catch (err) {
+                console.warn("Auth initialization fallback to anonymous:", err);
+                try {
+                    await signInAnonymously(auth);
+                } catch (e) {
+                    console.error("Auth failed:", e);
+                }
+            }
+            isAuthReady = true;
+        };
+
+        const { createApp, ref, computed, onMounted } = Vue;
+
+        createApp({
+            setup() {
+                const soundEnabled = ref(true);
+                let audioCtx = null;
+
+                const initAudio = () => {
+                    if (!audioCtx && typeof window !== 'undefined') {
+                        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+                        if (AudioContextClass) {
+                            audioCtx = new AudioContextClass();
+                        }
+                    }
+                    if (audioCtx && audioCtx.state === 'suspended') {
+                        audioCtx.resume();
+                    }
+                };
+
+                const playShuttleSound = (type = 'hit') => {
+                    if (!soundEnabled.value) return;
+                    try {
+                        initAudio();
+                        if (!audioCtx) return;
+                        const now = audioCtx.currentTime;
+
+                        if (type === 'hit' || type === 'smash') {
+                            const bufferSize = audioCtx.sampleRate * 0.08;
+                            const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+                            const output = buffer.getChannelData(0);
+                            for (let i = 0; i < bufferSize; i++) {
+                                output[i] = Math.random() * 2 - 1;
+                            }
+                            const whiteNoise = audioCtx.createBufferSource();
+                            whiteNoise.buffer = buffer;
+
+                            const filter = audioCtx.createBiquadFilter();
+                            filter.type = type === 'smash' ? 'lowpass' : 'bandpass';
+                            filter.frequency.setValueAtTime(type === 'smash' ? 1400 : 900, now);
+                            filter.frequency.exponentialRampToValueAtTime(120, now + 0.08);
+
+                            const gain = audioCtx.createGain();
+                            gain.gain.setValueAtTime(type === 'smash' ? 0.4 : 0.2, now);
+                            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+
+                            whiteNoise.connect(filter);
+                            filter.connect(gain);
+                            gain.connect(audioCtx.destination);
+
+                            whiteNoise.start(now);
+                        } else if (type === 'whistle') {
+                            const osc = audioCtx.createOscillator();
+                            const gain = audioCtx.createGain();
+                            osc.type = 'sine';
+                            osc.frequency.setValueAtTime(2800, now);
+                            osc.frequency.setValueAtTime(3200, now + 0.07);
+                            osc.frequency.setValueAtTime(2800, now + 0.14);
+
+                            gain.gain.setValueAtTime(0.12, now);
+                            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.22);
+
+                            osc.connect(gain);
+                            gain.connect(audioCtx.destination);
+                            osc.start(now);
+                            osc.stop(now + 0.22);
+                        }
+                    } catch (e) {
+                        console.log('Audio playback ignored', e);
+                    }
+                };
+
+                const toggleSound = () => {
+                    soundEnabled.value = !soundEnabled.value;
+                    if (soundEnabled.value) {
+                        playShuttleSound('whistle');
+                    }
+                };
+
+                const activeTab = ref('members');
+                const switchTab = (tab) => {
+                    activeTab.value = tab;
+                    playShuttleSound('hit');
+                };
+
+                const members = ref([]);
+                const newMemberName = ref('');
+                const newMemberType = ref('春小');
+                const selectedMemberIds = ref([]);
+                const assignedParticipants = ref([]);
+
+                const selectedIndividualMemberId = ref('');
+                const showDrawModal = ref(false);
+                const isSpinning = ref(false);
+                const currentDisplayNumber = ref('?');
+                const drawingMemberName = ref('');
+
+                const selectedWaitingMemberNumber = ref(null);
+                const courtCount = ref(2);
+
+                const fixedPairs = ref([]);
+                const fixedMember1Id = ref('');
+                const fixedMember2Id = ref('');
+
+                const matchHistory = ref([]);
+                const currentGameRound = ref(0);
+                const courts = ref([]);
+                const rotationOrder = ref([]);
+
+                const harukoMembers = computed(() => members.value.filter(m => m.type === '春小'));
+                const visitorMembers = computed(() => members.value.filter(m => m.type === 'ビジター'));
+
+                const todayParticipants = computed(() => {
+                    return members.value.filter(m => selectedMemberIds.value.includes(m.id));
+                });
+
+                const unassignedTodayParticipants = computed(() => {
+                    const assignedIds = new Set(assignedParticipants.value.map(p => p.id));
+                    return todayParticipants.value.filter(m => !assignedIds.has(m.id));
+                });
+
+                const remainingNumbers = computed(() => {
+                    const total = todayParticipants.value.length;
+                    const usedNumbers = new Set(assignedParticipants.value.map(p => p.number));
+                    const remaining = [];
+                    for (let i = 1; i <= total; i++) {
+                        if (!usedNumbers.has(i)) {
+                            remaining.push(i);
+                        }
+                    }
+                    return remaining;
+                });
+
+                const waitingList = computed(() => {
+                    if (courts.value.length === 0) return [];
+                    const activeNumbers = new Set();
+                    courts.value.forEach(court => {
+                        court.teamA.forEach(p => activeNumbers.add(playerNumber(p)));
+                        court.teamB.forEach(p => activeNumbers.add(playerNumber(p)));
+                    });
+                    return assignedParticipants.value.filter(p => !activeNumbers.has(p.number));
+                });
+
+                const playerNumber = (p) => typeof p === 'object' ? p.number : p;
+
+                const selectWaitingMember = (num) => {
+                    if (selectedWaitingMemberNumber.value === num) {
+                        selectedWaitingMemberNumber.value = null;
+                    } else {
+                        selectedWaitingMemberNumber.value = num;
+                    }
+                };
+
+                const membersPath = `members`;
+
+                const loadSampleData = async () => {
+                    const samples = [
+                        { id: '1', name: '佐藤 健太', type: '春小', createdAt: Date.now() },
+                        { id: '2', name: '鈴木 結衣', type: '春小', createdAt: Date.now() + 1 },
+                        { id: '3', name: '高橋 大樹', type: '春小', createdAt: Date.now() + 2 },
+                        { id: '4', name: '田中 さくら', type: '春小', createdAt: Date.now() + 3 },
+                        { id: '5', name: '伊藤 翔太', type: '春小', createdAt: Date.now() + 4 },
+                        { id: '6', name: '渡辺 葵', type: '春小', createdAt: Date.now() + 5 },
+                        { id: '7', name: '山本 拓海', type: '春小', createdAt: Date.now() + 6 },
+                        { id: '8', name: '中村 美咲', type: 'ビジター', createdAt: Date.now() + 7 },
+                        { id: '9', name: '小林 誠', type: 'ビジター', createdAt: Date.now() + 8 }
+                    ];
+
+                    members.value = samples;
+                    selectedMemberIds.value = samples.map(m => m.id);
+
+                    try {
+                        if (!isAuthReady) await initAuth();
+                        for (const item of samples) {
+                            const itemRef = dbRef(db, `${membersPath}/${item.id}`);
+                            await set(itemRef, item);
+                        }
+                    } catch (err) {
+                        console.warn("Failed to write sample data to Realtime Database:", err);
+                    }
+                };
+
+                const setupRealtimeSync = async () => {
+                    try {
+                        await initAuth();
+                    } catch (e) {
+                        console.warn("Auth initialization notice:", e);
+                    }
+
+                    const targetRef = dbRef(db, membersPath);
+                    onValue(targetRef, (snapshot) => {
+                        const data = snapshot.val();
+                        const memberList = [];
+                        if (data) {
+                            Object.keys(data).forEach(key => {
+                                memberList.push({ id: key, ...data[key] });
+                            });
+                        }
+                        
+                        if (memberList.length > 0) {
+                            memberList.sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
+                            members.value = memberList;
+
+                            const validIds = new Set(memberList.map(m => m.id));
+                            if (selectedMemberIds.value.length === 0) {
+                                selectedMemberIds.value = memberList.map(m => m.id);
+                            } else {
+                                selectedMemberIds.value = selectedMemberIds.value.filter(id => validIds.has(id));
+                            }
+                            assignedParticipants.value = assignedParticipants.value.filter(p => p.id && validIds.has(p.id));
+                        } else {
+                            loadSampleData();
+                        }
+                    }, (error) => {
+                        console.warn("Realtime Database sync notice:", error);
+                        if (members.value.length === 0) {
+                            loadSampleData();
+                        }
+                    });
+                };
+
+                const addMember = async () => {
+                    if (!newMemberName.value.trim()) return;
+                    playShuttleSound('hit');
+
+                    const newId = Date.now().toString();
+                    const newMember = {
+                        id: newId,
+                        name: newMemberName.value.trim(),
+                        type: newMemberType.value,
+                        createdAt: Date.now()
+                    };
+
+                    members.value.push(newMember);
+                    if (!selectedMemberIds.value.includes(newId)) {
+                        selectedMemberIds.value.push(newId);
+                    }
+                    newMemberName.value = '';
+
+                    try {
+                        if (!isAuthReady) await initAuth();
+                        const itemRef = dbRef(db, `${membersPath}/${newId}`);
+                        await set(itemRef, newMember);
+                    } catch (err) {
+                        console.warn("Failed to persist new member to Firebase:", err);
+                    }
+                };
+
+                const removeMember = async (id) => {
+                    members.value = members.value.filter(m => m.id !== id);
+                    selectedMemberIds.value = selectedMemberIds.value.filter(mId => mId !== id);
+                    assignedParticipants.value = assignedParticipants.value.filter(p => p.id !== id);
+                    fixedPairs.value = fixedPairs.value.filter(fp => fp.memberId1 !== id && fp.memberId2 !== id);
+
+                    try {
+                        if (!isAuthReady) await initAuth();
+                        const itemRef = dbRef(db, `${membersPath}/${id}`);
+                        await remove(itemRef);
+                    } catch (err) {
+                        console.warn("Failed to remove member from Firebase:", err);
+                    }
+                };
+
+                const addFixedPair = () => {
+                    if (!fixedMember1Id.value || !fixedMember2Id.value) return;
+                    if (fixedMember1Id.value === fixedMember2Id.value) return;
+
+                    const p1 = members.value.find(m => m.id === fixedMember1Id.value);
+                    const p2 = members.value.find(m => m.id === fixedMember2Id.value);
+
+                    if (!p1 || !p2) return;
+
+                    const exists = fixedPairs.value.some(fp => 
+                        (fp.memberId1 === p1.id && fp.memberId2 === p2.id) ||
+                        (fp.memberId1 === p2.id && fp.memberId2 === p1.id)
+                    );
+
+                    if (!exists) {
+                        playShuttleSound('hit');
+                        fixedPairs.value.push({
+                            id: Date.now().toString(),
+                            memberId1: p1.id,
+                            memberId2: p2.id,
+                            p1Name: p1.name,
+                            p2Name: p2.name
+                        });
+                    }
+
+                    fixedMember1Id.value = '';
+                    fixedMember2Id.value = '';
+
+                    if (courts.value.length > 0) {
+                        generateMatches();
+                    }
+                };
+
+                const removeFixedPair = (pairId) => {
+                    fixedPairs.value = fixedPairs.value.filter(fp => fp.id !== pairId);
+                    if (courts.value.length > 0) {
+                        generateMatches();
+                    }
+                };
+
+                const isFixedPair = (p1, p2) => {
+                    if (!p1 || !p2 || !p1.id || !p2.id) return false;
+                    return fixedPairs.value.some(fp => 
+                        (fp.memberId1 === p1.id && fp.memberId2 === p2.id) ||
+                        (fp.memberId1 === p2.id && fp.memberId2 === p1.id)
+                    );
+                };
+
+                const getFixedPartnerId = (memberId) => {
+                    const pair = fixedPairs.value.find(fp => fp.memberId1 === memberId || fp.memberId2 === memberId);
+                    if (!pair) return null;
+                    return pair.memberId1 === memberId ? pair.memberId2 : pair.memberId1;
+                };
+
+                const getPairTimes = (p1, p2) => {
+                    if (!p1 || !p2 || !p1.id || !p2.id) return 0;
+                    let count = 0;
+                    matchHistory.value.forEach(h => {
+                        h.pairs.forEach(pair => {
+                            if ((pair[0] === p1.id && pair[1] === p2.id) || (pair[0] === p2.id && pair[1] === p1.id)) {
+                                count++;
+                            }
+                        });
+                    });
+                    return count;
+                };
+
+                const resetMatchHistory = () => {
+                    matchHistory.value = [];
+                    currentGameRound.value = 0;
+                };
+
+                const selectAllMembers = () => {
+                    selectedMemberIds.value = members.value.map(m => m.id);
+                };
+
+                const deselectAllMembers = () => {
+                    selectedMemberIds.value = [];
+                    assignedParticipants.value = [];
+                };
+
+                const drawIndividualNumber = () => {
+                    if (!selectedIndividualMemberId.value) return;
+                    if (remainingNumbers.value.length === 0) return;
+
+                    const member = todayParticipants.value.find(m => m.id === selectedIndividualMemberId.value);
+                    if (!member) return;
+
+                    drawingMemberName.value = member.name;
+                    showDrawModal.value = true;
+                    isSpinning.value = true;
+
+                    let spinsLeft = 14;
+                    const interval = setInterval(() => {
+                        const randomTemp = remainingNumbers.value[Math.floor(Math.random() * remainingNumbers.value.length)];
+                        currentDisplayNumber.value = randomTemp;
+                        playShuttleSound('hit');
+                        spinsLeft--;
+
+                        if (spinsLeft <= 0) {
+                            clearInterval(interval);
+                            const chosenIndex = Math.floor(Math.random() * remainingNumbers.value.length);
+                            const finalNumber = remainingNumbers.value[chosenIndex];
+
+                            currentDisplayNumber.value = finalNumber;
+                            isSpinning.value = false;
+
+                            playShuttleSound('smash');
+
+                            assignedParticipants.value.push({
+                                ...member,
+                                number: finalNumber
+                            });
+
+                            assignedParticipants.value.sort((a, b) => a.number - b.number);
+                            rotationOrder.value = assignedParticipants.value.map(p => p.number);
+                            selectedIndividualMemberId.value = '';
+                        }
+                    }, 80);
+                };
+
+                const closeDrawModal = () => {
+                    showDrawModal.value = false;
+                };
+
+                const cancelIndividualNumber = (id) => {
+                    assignedParticipants.value = assignedParticipants.value.filter(p => p.id !== id);
+                    rotationOrder.value = assignedParticipants.value.map(p => p.number);
+                };
+
+                const resetAssignedNumbers = () => {
+                    assignedParticipants.value = [];
+                    courts.value = [];
+                };
+
+                const drawRandomNumbers = () => {
+                    if (todayParticipants.value.length === 0) return;
+                    playShuttleSound('smash');
+                    const participants = [...todayParticipants.value];
+                    const numbers = Array.from({ length: participants.length }, (_, i) => i + 1)
+                                         .sort(() => Math.random() - 0.5);
+                    
+                    assignedParticipants.value = participants.map((p, idx) => ({
+                        ...p,
+                        number: numbers[idx]
+                    })).sort((a, b) => a.number - b.number);
+
+                    rotationOrder.value = assignedParticipants.value.map(p => p.number);
+                };
+
+                const generateMatches = () => {
+                    if (assignedParticipants.value.length < 4) return;
+                    playShuttleSound('whistle');
+
+                    let currentNumbers = [...rotationOrder.value];
+                    if (currentNumbers.length === 0) {
+                        currentNumbers = assignedParticipants.value.map(p => p.number);
+                    }
+
+                    let remaining = currentNumbers
+                        .map(n => getParticipantByNumber(n))
+                        .filter(p => p && p.id);
+
+                    const buildGroups = (playerList) => {
+                        const groups = [];
+                        const visitedIds = new Set();
+
+                        for (const player of playerList) {
+                            if (visitedIds.has(player.id)) continue;
+
+                            const partnerId = getFixedPartnerId(player.id);
+                            const partner = partnerId ? playerList.find(p => p.id === partnerId && !visitedIds.has(p.id)) : null;
+
+                            if (partner) {
+                                groups.push({ players: [player, partner], isFixed: true });
+                                visitedIds.add(player.id);
+                                visitedIds.add(partner.id);
+                            } else {
+                                groups.push({ players: [player], isFixed: false });
+                                visitedIds.add(player.id);
+                            }
+                        }
+                        return groups;
+                    };
+
+                    let availableGroups = buildGroups(remaining);
+                    const newCourts = [];
+                    const roundPairs = [];
+
+                    for (let c = 1; c <= courtCount.value; c++) {
+                        const totalPlayersInGroups = availableGroups.reduce((sum, g) => sum + g.players.length, 0);
+                        if (totalPlayersInGroups < 4) break;
+
+                        const findCombinationFor4 = (groups) => {
+                            for (let i = 0; i < groups.length; i++) {
+                                const g1 = groups[i];
+                                if (g1.players.length === 4) return [i];
+                                
+                                for (let j = i + 1; j < groups.length; j++) {
+                                    const g2 = groups[j];
+                                    if (g1.players.length + g2.players.length === 4) return [i, j];
+
+                                    for (let k = j + 1; k < groups.length; k++) {
+                                        const g3 = groups[k];
+                                        if (g1.players.length + g2.players.length + g3.players.length === 4) return [i, j, k];
+
+                                        for (let l = k + 1; l < groups.length; l++) {
+                                            const g4 = groups[l];
+                                            if (g1.players.length + g2.players.length + g3.players.length + g4.players.length === 4) return [i, j, k, l];
+                                        }
+                                    }
+                                }
+                            }
+                            return null;
+                        };
+
+                        const selectedIndices = findCombinationFor4(availableGroups);
+                        if (!selectedIndices) break;
+
+                        const courtPlayers = [];
+                        selectedIndices.forEach(idx => {
+                            courtPlayers.push(...availableGroups[idx].players);
+                        });
+
+                        selectedIndices.sort((a, b) => b - a).forEach(idx => {
+                            availableGroups.splice(idx, 1);
+                        });
+
+                        const patterns = [
+                            { teamA: [courtPlayers[0], courtPlayers[1]], teamB: [courtPlayers[2], courtPlayers[3]] },
+                            { teamA: [courtPlayers[0], courtPlayers[2]], teamB: [courtPlayers[1], courtPlayers[3]] },
+                            { teamA: [courtPlayers[0], courtPlayers[3]], teamB: [courtPlayers[1], courtPlayers[2]] }
+                        ];
+
+                        let bestPattern = null;
+                        let bestScore = Infinity;
+
+                        for (const pat of patterns) {
+                            let score = 0;
+
+                            let fixedPairBroken = false;
+                            fixedPairs.value.forEach(fp => {
+                                const hasP1 = courtPlayers.some(p => p.id === fp.memberId1);
+                                const hasP2 = courtPlayers.some(p => p.id === fp.memberId2);
+                                if (hasP1 && hasP2) {
+                                    const sameA = pat.teamA.some(p => p.id === fp.memberId1) && pat.teamA.some(p => p.id === fp.memberId2);
+                                    const sameB = pat.teamB.some(p => p.id === fp.memberId1) && pat.teamB.some(p => p.id === fp.memberId2);
+                                    if (!sameA && !sameB) {
+                                        fixedPairBroken = true;
+                                    }
+                                }
+                            });
+
+                            if (fixedPairBroken) {
+                                score += 1000000;
+                            }
+
+                            const aTimes = getPairTimes(pat.teamA[0], pat.teamA[1]);
+                            const bTimes = getPairTimes(pat.teamB[0], pat.teamB[1]);
+
+                            score += (aTimes * 1000) + (bTimes * 1000) + (Math.random() * 0.1);
+
+                            if (score < bestScore) {
+                                bestScore = score;
+                                bestPattern = pat;
+                            }
+                        }
+
+                        newCourts.push({
+                            id: c,
+                            teamA: bestPattern.teamA,
+                            teamB: bestPattern.teamB
+                        });
+
+                        roundPairs.push([bestPattern.teamA[0].id, bestPattern.teamA[1].id]);
+                        roundPairs.push([bestPattern.teamB[0].id, bestPattern.teamB[1].id]);
+                    }
+
+                    courts.value = newCourts;
+
+                    currentGameRound.value++;
+                    matchHistory.value.push({
+                        round: currentGameRound.value,
+                        pairs: roundPairs
+                    });
+                };
+
+                const getParticipantByNumber = (num) => {
+                    return assignedParticipants.value.find(p => p.number === num) || { number: num, name: '不明' };
+                };
+
+                const skipPlayer = (skipNum) => {
+                    playShuttleSound('hit');
+                    
+                    const waiting = waitingList.value;
+                    
+                    let targetCourt = null;
+                    let targetTeamKey = null;
+                    let targetIndex = -1;
+
+                    for (const court of courts.value) {
+                        const idxA = court.teamA.findIndex(p => playerNumber(p) === skipNum);
+                        if (idxA !== -1) {
+                            targetCourt = court;
+                            targetTeamKey = 'teamA';
+                            targetIndex = idxA;
+                            break;
+                        }
+                        const idxB = court.teamB.findIndex(p => playerNumber(p) === skipNum);
+                        if (idxB !== -1) {
+                            targetCourt = court;
+                            targetTeamKey = 'teamB';
+                            targetIndex = idxB;
+                            break;
+                        }
+                    }
+
+                    if (targetCourt && targetTeamKey) {
+                        if (waiting.length === 0) {
+                            return;
+                        }
+
+                        let incomingPlayer = waiting[0];
+                        if (selectedWaitingMemberNumber.value) {
+                            const found = waiting.find(p => p.number === selectedWaitingMemberNumber.value);
+                            if (found) {
+                                incomingPlayer = found;
+                            }
+                        }
+
+                        targetCourt[targetTeamKey][targetIndex] = incomingPlayer;
+
+                        const skipIdx = rotationOrder.value.indexOf(skipNum);
+                        const incIdx = rotationOrder.value.indexOf(incomingPlayer.number);
+
+                        if (skipIdx !== -1) {
+                            rotationOrder.value[skipIdx] = incomingPlayer.number;
+                        }
+                        if (incIdx !== -1) {
+                            rotationOrder.value.splice(incIdx, 1);
+                        }
+                        rotationOrder.value.push(skipNum);
+
+                        if (matchHistory.value.length > 0) {
+                            const latestHistory = matchHistory.value[matchHistory.value.length - 1];
+                            const skippedParticipant = assignedParticipants.value.find(p => p.number === skipNum);
+                            if (skippedParticipant) {
+                                latestHistory.pairs = latestHistory.pairs.map(pair => {
+                                    return pair.map(id => id === skippedParticipant.id ? incomingPlayer.id : id);
+                                });
+                            }
+                        }
+
+                        selectedWaitingMemberNumber.value = null;
+                    } else {
+                        const idx = rotationOrder.value.indexOf(skipNum);
+                        if (idx !== -1) {
+                            rotationOrder.value.splice(idx, 1);
+                            rotationOrder.value.push(skipNum);
+                        }
+                    }
+                };
+
+                const nextRotation = () => {
+                    if (courts.value.length === 0) return;
+
+                    const totalPlaying = courts.value.length * 4;
+                    if (rotationOrder.value.length <= totalPlaying) {
+                        rotationOrder.value.sort(() => Math.random() - 0.5);
+                    } else {
+                        const played = rotationOrder.value.splice(0, totalPlaying);
+                        rotationOrder.value.push(...played);
+                    }
+
+                    generateMatches();
+                };
+
+                onMounted(() => {
+                    setupRealtimeSync();
+                });
+
+                return {
+                    soundEnabled,
+                    toggleSound,
+                    activeTab,
+                    switchTab,
+                    members,
+                    harukoMembers,
+                    visitorMembers,
+                    newMemberName,
+                    newMemberType,
+                    selectedMemberIds,
+                    todayParticipants,
+                    unassignedTodayParticipants,
+                    remainingNumbers,
+                    assignedParticipants,
+                    selectedIndividualMemberId,
+                    showDrawModal,
+                    isSpinning,
+                    currentDisplayNumber,
+                    drawingMemberName,
+                    selectedWaitingMemberNumber,
+                    selectWaitingMember,
+                    courtCount,
+                    fixedPairs,
+                    fixedMember1Id,
+                    fixedMember2Id,
+                    matchHistory,
+                    currentGameRound,
+                    courts,
+                    waitingList,
+                    addMember,
+                    removeMember,
+                    addFixedPair,
+                    removeFixedPair,
+                    isFixedPair,
+                    getPairTimes,
+                    resetMatchHistory,
+                    selectAllMembers,
+                    deselectAllMembers,
+                    drawIndividualNumber,
+                    closeDrawModal,
+                    cancelIndividualNumber,
+                    resetAssignedNumbers,
+                    drawRandomNumbers,
+                    generateMatches,
+                    skipPlayer,
+                    nextRotation,
+                    loadSampleData
+                };
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>
+```
